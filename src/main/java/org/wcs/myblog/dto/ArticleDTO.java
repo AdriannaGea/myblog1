@@ -11,6 +11,8 @@ public class ArticleDTO {
     private String categoryName;
     private List<String> imagesUrls;
 
+    private List<AuthorDTO> authorDTOs;
+
     public Long getId() {
         return id;
     }
@@ -57,5 +59,13 @@ public class ArticleDTO {
 
     public void setImagesUrls(List<String> imagesUrls) {
         this.imagesUrls = imagesUrls;
+    }
+
+    public List<AuthorDTO> getAuthorDTOs() {
+        return authorDTOs;
+    }
+
+    public void setAuthorDTOs(List<AuthorDTO> authorDTOs) {
+        this.authorDTOs = authorDTOs;
     }
 }
