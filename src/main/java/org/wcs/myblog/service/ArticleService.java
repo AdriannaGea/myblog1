@@ -2,6 +2,9 @@ package org.wcs.myblog.service;
 
 import org.springframework.stereotype.Service;
 import org.wcs.myblog.dto.ArticleDTO;
+import org.wcs.myblog.exception.CategoryNotFoundException;
+import org.wcs.myblog.exception.ImageNotFoundException;
+import org.wcs.myblog.exception.ResourceNotFoundException;
 import org.wcs.myblog.mapper.ArticleMapper;
 import org.wcs.myblog.model.*;
 import org.wcs.myblog.repository.*;
@@ -42,10 +45,8 @@ public class ArticleService {
     }
 
     public ArticleDTO getArticleById(Long id) {
-        Article article = articleRepository.findById(id).orElse(null);
-        if (article == null) {
-            return null;
-        }
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("L'article avec l'id " + id + " n'a pas été trouvé"));
         return articleMapper.convertToDTO(article);
     }
 
@@ -54,27 +55,17 @@ public class ArticleService {
         article.setUpdatedAt(LocalDateTime.now());
 
         if (article.getCategory() != null) {
-            Category category = categoryRepository.findById(article.getCategory().getId()).orElse(null);
-            if (category == null) {
-                return null;
-            }
+            Category category = categoryRepository.findById(article.getCategory().getId())
+                    .orElseThrow(() -> new CategoryNotFoundException("La catégorie avec l'id " + article.getCategory().getId() + " n'a pas été trouvée"));
             article.setCategory(category);
         }
 
-        if (article.getImages() != null && !article.getImages().isEmpty()) {
-            List<Image> validImages = new ArrayList<>();
+        List<Image> validImages = new ArrayList<>();
+        if (article.getImages() != null) {
             for (Image image : article.getImages()) {
-                if (image.getId() != null) {
-                    Image existingImage = imageRepository.findById(image.getId()).orElse(null);
-                    if (existingImage != null) {
-                        validImages.add(existingImage);
-                    } else {
-                        return null;
-                    }
-                } else {
-                    Image savedImage = imageRepository.save(image);
-                    validImages.add(savedImage);
-                }
+                Image existingImage = imageRepository.findById(image.getId())
+                        .orElseThrow(() -> new ImageNotFoundException("L'image avec l'id " + image.getId() + " n'a pas été trouvée"));
+                validImages.add(existingImage);
             }
             article.setImages(validImages);
         }
@@ -83,16 +74,10 @@ public class ArticleService {
 
         if (article.getArticleAuthors() != null) {
             for (ArticleAuthor articleAuthor : article.getArticleAuthors()) {
-                Author author = articleAuthor.getAuthor();
-                author = authorRepository.findById(author.getId()).orElse(null);
-                if (author == null) {
-                    return null;
-                }
-
+                Author author = authorRepository.findById(articleAuthor.getAuthor().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("L'auteur avec l'id " + articleAuthor.getAuthor().getId() + " n'a pas été trouvé"));
                 articleAuthor.setAuthor(author);
                 articleAuthor.setArticle(savedArticle);
-                articleAuthor.setContribution(articleAuthor.getContribution());
-
                 articleAuthorRepository.save(articleAuthor);
             }
         }
@@ -101,71 +86,45 @@ public class ArticleService {
     }
 
     public ArticleDTO updateArticle(Long id, Article articleDetails) {
-        Article article = articleRepository.findById(id).orElse(null);
-        if (article == null) {
-            return null;
-        }
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("L'article avec l'id " + id + " n'a pas été trouvé"));
+
         article.setTitle(articleDetails.getTitle());
         article.setContent(articleDetails.getContent());
         article.setUpdatedAt(LocalDateTime.now());
 
-        // Mise à jour de la catégorie
         if (articleDetails.getCategory() != null) {
-            Category category = categoryRepository.findById(articleDetails.getCategory().getId()).orElse(null);
-            if (category == null) {
-                return null;
-            }
+            Category category = categoryRepository.findById(articleDetails.getCategory().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("La catégorie avec l'id " + articleDetails.getCategory().getId() + " n'a pas été trouvée"));
             article.setCategory(category);
         }
 
-        // Mise à jour des images
+        List<Image> validImages = new ArrayList<>();
         if (articleDetails.getImages() != null) {
-            List<Image> validImages = new ArrayList<>();
             for (Image image : articleDetails.getImages()) {
-                if (image.getId() != null) {
-                    Image existingImage = imageRepository.findById(image.getId()).orElse(null);
-                    if (existingImage != null) {
-                        validImages.add(existingImage);
-                    } else {
-                        return null;
-                    }
-                } else {
-                    Image savedImage = imageRepository.save(image);
-                    validImages.add(savedImage);
-                }
+                Image existingImage = imageRepository.findById(image.getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("L'image avec l'id " + image.getId() + " n'a pas été trouvée"));
+                validImages.add(existingImage);
             }
             article.setImages(validImages);
         } else {
             article.getImages().clear();
         }
 
-        // Mise à jour des auteurs
+        articleAuthorRepository.deleteAll(article.getArticleAuthors());
+        List<ArticleAuthor> updatedArticleAuthors = new ArrayList<>();
         if (articleDetails.getArticleAuthors() != null) {
-            for (ArticleAuthor oldArticleAuthor : article.getArticleAuthors()) {
-                articleAuthorRepository.delete(oldArticleAuthor);
-            }
-
-            List<ArticleAuthor> updatedArticleAuthors = new ArrayList<>();
-
             for (ArticleAuthor articleAuthorDetails : articleDetails.getArticleAuthors()) {
-                Author author = articleAuthorDetails.getAuthor();
-                author = authorRepository.findById(author.getId()).orElse(null);
-                if (author == null) {
-                    return null;
-                }
+                Author author = authorRepository.findById(articleAuthorDetails.getAuthor().getId())
+                        .orElseThrow(() -> new ResourceNotFoundException("L'auteur avec l'id " + articleAuthorDetails.getAuthor().getId() + " n'a pas été trouvé"));
 
                 ArticleAuthor newArticleAuthor = new ArticleAuthor();
                 newArticleAuthor.setAuthor(author);
                 newArticleAuthor.setArticle(article);
                 newArticleAuthor.setContribution(articleAuthorDetails.getContribution());
-
                 updatedArticleAuthors.add(newArticleAuthor);
             }
-
-            for (ArticleAuthor articleAuthor : updatedArticleAuthors) {
-                articleAuthorRepository.save(articleAuthor);
-            }
-
+            articleAuthorRepository.saveAll(updatedArticleAuthors);
             article.setArticleAuthors(updatedArticleAuthors);
         }
 
@@ -174,10 +133,8 @@ public class ArticleService {
     }
 
     public boolean deleteArticle(Long id) {
-        Article article = articleRepository.findById(id).orElse(null);
-        if (article == null) {
-            return false;
-        }
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("L'article avec l'id " + id + " n'a pas été trouvé"));
 
         articleAuthorRepository.deleteAll(article.getArticleAuthors());
         articleRepository.delete(article);
