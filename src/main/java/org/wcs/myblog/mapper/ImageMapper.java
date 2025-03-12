@@ -10,6 +10,13 @@ import java.util.stream.Collectors;
 @Component
 public class ImageMapper {
 
+    public Image convertToEntity(ImageDTO imageDTO) {
+        Image image = new Image();
+        image.setUrl(imageDTO.getUrl());
+
+        return image;
+    }
+
     public ImageDTO convertToDTO(Image image) {
         ImageDTO imageDTO = new ImageDTO();
         imageDTO.setId(image.getId());

@@ -1,6 +1,7 @@
 package org.wcs.myblog.mapper;
 
 import org.springframework.stereotype.Component;
+import org.wcs.myblog.dto.ArticleCreateDTO;
 import org.wcs.myblog.dto.ArticleDTO;
 import org.wcs.myblog.dto.AuthorDTO;
 import org.wcs.myblog.model.Article;
@@ -11,6 +12,14 @@ import java.util.stream.Collectors;
 @Component
 
 public class ArticleMapper {
+
+    public Article convertToEntity(ArticleCreateDTO articleCreateDTO) {
+        Article article = new Article();
+        article.setTitle(articleCreateDTO.getTitle());
+        article.setContent(articleCreateDTO.getContent());
+
+        return article;
+    }
 
     public ArticleDTO convertToDTO(Article article) {
         ArticleDTO articleDTO = new ArticleDTO();

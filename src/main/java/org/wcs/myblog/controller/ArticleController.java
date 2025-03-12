@@ -1,8 +1,10 @@
 package org.wcs.myblog.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.wcs.myblog.dto.ArticleCreateDTO;
 import org.wcs.myblog.dto.ArticleDTO;
 import org.wcs.myblog.dto.AuthorDTO;
 import org.wcs.myblog.model.*;
@@ -47,8 +49,8 @@ public class ArticleController {
     }
 
     @PostMapping
-    public ResponseEntity<ArticleDTO> createArticle(@RequestBody Article article) {
-        ArticleDTO savedArticle = articleService.createArticle(article);
+    public ResponseEntity<ArticleDTO> createArticle(@Valid @RequestBody ArticleCreateDTO articleCreateDTO) {
+        ArticleDTO savedArticle = articleService.createArticle(articleCreateDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedArticle);
     }
 
